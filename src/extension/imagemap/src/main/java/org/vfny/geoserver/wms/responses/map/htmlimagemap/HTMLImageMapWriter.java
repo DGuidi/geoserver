@@ -37,7 +37,6 @@ import org.geotools.styling.Mark;
 import org.geotools.styling.PointSymbolizer;
 import org.geotools.styling.Rule;
 import org.geotools.styling.SLD;
-import org.geotools.styling.Style;
 import org.geotools.styling.Symbolizer;
 import org.geotools.styling.TextSymbolizer;
 import org.opengis.feature.simple.SimpleFeature;
@@ -46,7 +45,6 @@ import org.opengis.filter.Filter;
 import org.opengis.filter.expression.Expression;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.operation.MathTransform;
-import org.opengis.referencing.operation.TransformException;
 import org.vfny.geoserver.wms.responses.map.htmlimagemap.holes.HolesRemover;
 
 import com.vividsolutions.jts.geom.Coordinate;
@@ -658,11 +656,8 @@ public class HTMLImageMapWriter extends OutputStreamWriter {
      */
     private class PointWriter extends HTMLImageMapFeatureWriter {
         
-    	// encodes as a circle shape?
-    	boolean asCircle=true;
-    	// encodes as a different shape? (currently not supported--> empty rendering)
     	String symbol=null;
-    	// radius of the circle
+    	// radius of the symbol
     	double size=2;
     	
     	/**
@@ -693,9 +688,7 @@ public class HTMLImageMapWriter extends OutputStreamWriter {
         			Object oSize=graphic.getSize().evaluate(null);
         			if(oSize!=null)
         				size=Double.parseDouble(oSize.toString());
-        			asCircle=SLD.wellKnownName(mark).toLowerCase().equals("circle");
-        			if(!asCircle)
-        				symbol=SLD.wellKnownName(mark).toLowerCase();
+        			symbol=SLD.wellKnownName(mark).toLowerCase();
         		}
         		
     		}
@@ -712,19 +705,16 @@ public class HTMLImageMapWriter extends OutputStreamWriter {
          * @throws IOException if an error occures during encoding
          */
         protected void writeGeometry(Geometry geom,StringBuffer buf) throws IOException {
-        	if(geom instanceof Point) {
-	            Point p = (Point) geom;
-	            if(p.getCoordinate()!=null) {
-		            if(asCircle) {
-		            	writeToBuffer(getPoint(p.getCoordinate())+","+(int)Math.round(size),buf);
-		            } else{
-		            	throw new IOException("Nothing to encode");
-		            	//TODO: manage different shapes
-		            }
-	            } else
-	            	throw new IOException("null point coordinate");
-        	} else
-        		throw new IOException("Wrong geometry: it should be a Point");
+			if (!(geom instanceof Point)) {
+				throw new IOException("Wrong geometry: it should be a Point");
+			}
+			Point p = (Point) geom;
+			Coordinate c = p.getCoordinate();
+			if (c == null) {
+				throw new IOException("null point coordinate");
+			}
+			String s = getPoint(c);
+			writeToBuffer(s + "," + (int) Math.round(size), buf);        	
         }
     }
 

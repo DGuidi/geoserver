@@ -4,7 +4,9 @@
  */
 package org.vfny.geoserver.wms.responses.map.htmlimagemap;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.awt.Color;
 import java.io.BufferedReader;
@@ -13,8 +15,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.logging.Logger;
-
-import junit.framework.TestCase;
 
 import org.geoserver.platform.GeoServerResourceLoader;
 import org.geoserver.wms.WMSMapContent;
@@ -151,9 +151,9 @@ public class HTMLImageMapTest {
             BufferedReader reader = new BufferedReader(new FileReader(testFile));
 
             String s = null;
-            while ((s = reader.readLine()) != null)
-                testText.append(s + "\n");
-
+            while ((s = reader.readLine()) != null) {
+				testText.append(s + "\n");
+			}
             reader.close();
 
         } finally {
@@ -161,9 +161,13 @@ public class HTMLImageMapTest {
         }
         assertNotNull(out);
         assertTrue(out.size() > 0);
-        String s = new String(out.toByteArray());
-
-        assertEquals(testText.toString(), s);
+        String actual = new String(out.toByteArray());        
+        String expected = testText.toString();        
+        boolean equals = expected.equals(actual);
+		if (!equals) {
+        	System.err.println(actual);
+        }
+		assertEquals(expected, actual);
     }
 
     @Test
@@ -540,6 +544,27 @@ public class HTMLImageMapTest {
             }
         }
 
+    }
+    
+    @Test
+    public void test_points_are_rendered_always_as_circles() throws Exception {
+
+        final String s = "VariousPoints";        
+		FeatureSource<SimpleFeatureType, SimpleFeature> fs = testDS
+                .getFeatureSource(s);
+        ReferencedEnvelope env = new ReferencedEnvelope(fs.getBounds(), WGS84);
+        LOGGER.info("about to create map ctx for BuildingCenters with bounds " + env);
+
+        WMSMapContent map = new WMSMapContent();
+        map.getViewport().setBounds(env);
+        map.setMapWidth(mapWidth);
+        map.setMapHeight(mapHeight);
+        map.setTransparent(false);
+        Style basicStyle = getTestStyle(String.format("%s.sld", s));
+        map.addLayer(new FeatureLayer(fs, basicStyle));
+        
+        EncodeHTMLImageMap result = mapProducer.produceMap(map);
+        assertTestResult(s, result);
     }
 
 }
