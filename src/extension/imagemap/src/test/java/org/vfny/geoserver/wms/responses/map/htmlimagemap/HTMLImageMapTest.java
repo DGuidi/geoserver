@@ -145,7 +145,7 @@ public class HTMLImageMapTest extends TestCase {
             reader.close();
 
         } finally {
-            imageMap.dispose();
+            //imageMap.dispose();
         }
         assertNotNull(out);
         assertTrue(out.size() > 0);
@@ -479,6 +479,26 @@ public class HTMLImageMapTest extends TestCase {
         EncodeHTMLImageMap result = mapProducer.produceMap(map);
         assertTestResult("NoCoords", result);
     }
+    
+    public void test_points_are_rendered_always_as_circles() throws Exception {
+
+      final String s = "VariousPoints";        
+      FeatureSource<SimpleFeatureType, SimpleFeature> fs = testDS
+              .getFeatureSource(s);
+      ReferencedEnvelope env = new ReferencedEnvelope(fs.getBounds(), WGS84);
+      LOGGER.info("about to create map ctx for BuildingCenters with bounds " + env);
+
+      final WMSMapContext map = new WMSMapContext();
+      map.setAreaOfInterest(env);
+      map.setMapWidth(mapWidth);
+      map.setMapHeight(mapHeight);
+      map.setTransparent(false);
+      Style basicStyle = getTestStyle(String.format("%s.sld", s));
+      map.addLayer(fs, basicStyle);
+      
+      EncodeHTMLImageMap result = mapProducer.produceMap(map);
+      assertTestResult(s, result);
+  }
 
     public static void main(String[] args) {
         junit.textui.TestRunner.run(HTMLImageMapTest.class);

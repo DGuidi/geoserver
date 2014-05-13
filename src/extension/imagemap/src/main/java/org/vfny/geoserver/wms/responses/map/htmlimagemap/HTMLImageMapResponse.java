@@ -42,7 +42,7 @@ public class HTMLImageMapResponse extends Response {
         try {
             htmlImageMapEncoder.encode(output);
         } finally {
-            htmlImageMapEncoder.dispose();
+            //htmlImageMapEncoder.dispose();
         }
     }
 
